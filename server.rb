@@ -1,11 +1,14 @@
+# -*- encoding : utf-8 -*-
+
 require "rest-client"
 require "nokogiri"
 require "sinatra"
 require "thread"
 require "jsonify"
 
-domain  = "https://www.flashback.org"
-threads = nil
+domain     = "https://www.flashback.org"
+result     = nil
+created_at = Time.now
 
 Thread.new do
   loop do
@@ -18,7 +21,7 @@ Thread.new do
         stats    = thread.css("td.alt1.alignc")
 
         next unless content1
-
+        
         {
           url: domain + content1.attr("href"),
           title: content1.text,
@@ -28,12 +31,21 @@ Thread.new do
           views: stats[2].content.gsub(/[^0-9]/, ""),
           answers: stats[3].content
         }
-      end.reject(&:nil?).to_json
+      end.reject(&:nil?)
+      
+      result = {
+        created_at: created_at,
+        updated_at: Time.now,
+        source: "https://www.flashback.org/heta-amnen",
+        title: "Flashback.org - Heta ämnen",
+        amount_of_threads: threads.count,
+        threads: threads
+      }.to_json
     end
     sleep 60
   end
 end
 
 get "/" do
-  threads
+  result
 end
